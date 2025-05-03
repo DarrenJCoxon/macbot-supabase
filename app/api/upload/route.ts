@@ -16,6 +16,17 @@ import { insertVectors } from '@/app/lib/pinecone-client'; // Adjust path if nee
 import { PdfReader } from 'pdfreader';
 // Removed static mammoth import, using dynamic below
 
+// --- VVV ADD CONFIG HERE VVV ---
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: '4mb', // Or '4mb', '5mb', etc. - Adjust as needed, up to Vercel limit (~4.5mb)
+        },
+        // externalResolver might be needed for some scenarios, but often not for basic uploads
+        // externalResolver: true,
+    },
+};
+
 // --- PDF Helper Function using pdfreader (Keep exactly as before) ---
 async function parsePdfBuffer(buffer: Buffer): Promise<string> {
     return new Promise((resolve, reject) => {
