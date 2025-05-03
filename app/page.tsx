@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image'; // Import Image component
+import Image from 'next/image';
 import styled from 'styled-components';
 import { createClient } from './lib/supabase/client'; // Adjust path if needed
 
@@ -18,14 +18,15 @@ const AuthPageContainer = styled.main`
   min-height: 100vh;
   padding: 2rem;
   background-color: ${props => props.theme.colors.background};
-  background-image: url('/parchment-bg.png');
+  background-image: url('/parchment-bg.png'); // Ensure this image is in /public
   background-size: cover;
+  background-attachment: fixed; // Optional: keep background fixed during scroll
   font-family: ${props => props.theme.fonts.body};
   color: ${props => props.theme.colors.text};
 `;
 
 const ContentBox = styled.div`
-  background-color: rgba(248, 244, 233, 0.85); // Semi-transparent parchment
+  background-color: rgba(248, 244, 233, 0.9); // Slightly more opaque parchment
   border: 2px solid ${props => props.theme.colors.border};
   border-radius: ${props => props.theme.borderRadius.large};
   padding: 2rem 3rem;
@@ -33,7 +34,7 @@ const ContentBox = styled.div`
   width: 100%;
   text-align: center;
   box-shadow: ${props => props.theme.shadows.large};
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(2px); // Slight blur effect on background behind the box
 `;
 
 const Title = styled.h1`
@@ -41,7 +42,7 @@ const Title = styled.h1`
   color: ${props => props.theme.colors.primary};
   font-size: 2.8rem;
   margin-bottom: 0.5rem;
-  &:before, &:after { content: '📜'; margin: 0 10px; }
+  &:before, &:after { content: '📜'; margin: 0 10px; } // Scroll icons
 `;
 
 const Subtitle = styled.p`
@@ -69,7 +70,7 @@ const Quote = styled.blockquote`
   margin: 1.5rem auto;
   padding: 0.5rem 1rem;
   border-left: 3px solid ${props => props.theme.colors.gold};
-  max-width: 80%;
+  max-width: 90%; // Allow slightly wider quotes
   line-height: 1.5;
 
   cite {
@@ -83,11 +84,23 @@ const Quote = styled.blockquote`
 
 const AuthWrapper = styled.div`
   margin-top: 2rem;
-  // Target Supabase Auth component elements for basic override if needed
-  // Example: Changing button colors (use inspect element to find classes)
-  // .supabase-auth-ui_ui-button button {
-  //   background-color: ${props => props.theme.colors.secondary};
-  // }
+  /* Basic Theme Overrides for Supabase Auth UI */
+  --colors-brand: ${props => props.theme.colors.secondary};
+  --colors-brandAccent: ${props => props.theme.colors.secondaryLight};
+  --colors-inputBackground: ${props => props.theme.colors.background};
+  --colors-inputText: ${props => props.theme.colors.text};
+  --border-radius-medium: ${props => props.theme.borderRadius.medium};
+  --fonts-body: ${props => props.theme.fonts.body};
+  --fonts-heading: ${props => props.theme.fonts.heading};
+
+  /* You might need more specific selectors if the above don't work */
+  .supabase-auth-ui_ui-label label,
+  .supabase-auth-ui_ui-anchor a {
+     color: ${props => props.theme.colors.textLight};
+     &:hover {
+        color: ${props => props.theme.colors.secondary};
+     }
+  }
 `;
 // --- End Styled Components ---
 
@@ -97,36 +110,40 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Listener for sign-in events
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event) => {
+      (event) => { // Capture event only, session removed as it's unused
         if (event === 'SIGNED_IN') {
           console.log('AuthPage: User signed in, redirecting to /chat...');
           router.push('/chat'); // Redirect to the NEW chat page
-          router.refresh(); // Refresh needed for server components potentially
+          router.refresh();
         }
-        // Add SIGNED_OUT listener if you implement logout
+        // Optional: Handle sign out if you implement it elsewhere
         // if (event === 'SIGNED_OUT') {
-        //   router.push('/'); // Redirect to login on sign out
+        //   router.push('/');
         //   router.refresh();
         // }
       }
     );
 
-    // Also check if user is already logged in on initial mount
+    // Check if user is ALREADY logged in when the page loads
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        console.log('AuthPage: Existing session found, redirecting to /chat...');
-        router.push('/chat');
+        console.log('AuthPage: Existing session detected on mount, redirecting to /chat...');
+        router.push('/chat'); // Redirect immediately if already logged in
+      } else {
+        console.log('AuthPage: No active session on mount.');
       }
     };
-    checkSession();
 
+    checkSession(); // Check session when component mounts
 
+    // Cleanup listener on unmount
     return () => {
       authListener?.subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [supabase, router]); // Dependencies for useEffect
 
 
   return (
@@ -136,39 +153,32 @@ export default function AuthPage() {
         <Subtitle>Pray, identify thyself to parley with the Oracle.</Subtitle>
 
         <BardImageContainer>
-          {/* Add your Shakespeare image here */}
+          {/* Make sure shakespeare.png is in /public */}
           <Image
-            src="/shakespeare.png" // Make sure this image is in /public
+            src="/shakespeare.png"
             alt="Portrait of William Shakespeare"
             width={120}
             height={120}
-            priority // Load image sooner
+            priority
           />
         </BardImageContainer>
 
         <Quote>
-          &quot;Double, double toil and trouble; Fire burn and cauldron bubble.&quot;
+          &quot;Double, double toil and trouble; Fire burn and caldron bubble.&quot;
           <cite>— Macbeth, Act IV, Scene 1</cite>
         </Quote>
 
         <AuthWrapper>
           <Auth
             supabaseClient={supabase}
-            appearance={{ theme: ThemeSupa }} // Keep Supa theme for structure
-            providers={[]} // Add providers if needed (e.g., ['github', 'google'])
-            theme="dark" // Or "light" - match your preference
-            showLinks={true} // Show Sign Up / Forgot Password links
-            // You can add more customization via appearance prop if needed
-            // appearance={{
-            //   variables: {
-            //     default: {
-            //       colors: {
-            //         brand: theme.colors.secondary,
-            //         brandAccent: theme.colors.secondaryLight,
-            //       },
-            //     },
-            //   },
-            // }}
+            appearance={{
+                theme: ThemeSupa,
+                // Optional: Apply custom theme variables using CSS variables
+                // See Supabase UI docs for more customization options
+            }}
+            providers={[]} // e.g., ['google', 'github']
+            theme="dark" // Or "light"
+            showLinks={true} // Show Sign Up / Forgot Password
           />
         </AuthWrapper>
 

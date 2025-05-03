@@ -1,11 +1,12 @@
 // app/chat/page.tsx
 'use client';
 
-import Chat from '../components/Chat'; // Ensure this path is correct: app/components/Chat
+import Chat from '../components/Chat'; // Assuming components is inside app/
 import Link from 'next/link';
 import styled from 'styled-components';
+import LogoutButton from '../components/LogoutButton'; // Import LogoutButton
 
-// --- Styled Components (Keep all definitions as they were) ---
+// --- Styled Components ---
 const PageContainer = styled.main`
   display: flex;
   min-height: 100vh;
@@ -14,10 +15,10 @@ const PageContainer = styled.main`
   justify-content: center;
   padding: 2rem;
   background-color: ${props => props.theme?.colors?.background || 'var(--background)'};
-  background-image: url('/parchment-bg.png');
+  background-image: url('/parchment-bg.png'); // Ensure this image is in /public
   background-size: cover;
   background-attachment: fixed;
-  position: relative;
+  position: relative; // Needed for absolute positioning of buttons
 `;
 
 const ContentWrapper = styled.div`
@@ -25,14 +26,29 @@ const ContentWrapper = styled.div`
   max-width: 800px;
   position: relative;
   margin: 2rem auto;
+  padding-top: 3rem; // Add padding to avoid overlap with top buttons
 `;
 
-// Renamed for clarity (matches previous working version)
-const AdminButtonLink = styled(Link)`
+// Container for top-left buttons (like Logout)
+const TopLeftContainer = styled.div`
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 10;
+  display: flex;
+  gap: 1rem;
+`;
+
+// Container for top-right buttons (like Admin Link)
+const TopRightContainer = styled.div`
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
   z-index: 10;
+`;
+
+// Admin Link styling (adapted from previous AdminButtonLink)
+const AdminLink = styled(Link)`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,7 +65,7 @@ const AdminButtonLink = styled(Link)`
   transition: all 0.2s ease;
 
   &:before {
-    content: '✒️';
+    content: '✒️'; // Scribe icon
     margin-right: 0.5rem;
     font-size: 1.2rem;
   }
@@ -109,12 +125,21 @@ const Flourish = styled.div`
 `;
 // --- End Styled Components ---
 
-// --- FIXED: Renamed function ---
+// This is the Chat Page component, shown after login
 export default function ChatPage() {
   return (
     <PageContainer>
-      {/* Use the renamed styled component */}
-      <AdminButtonLink href="/admin">Scribe&apos;s Chambers</AdminButtonLink>
+       {/* Top-Left Buttons */}
+       <TopLeftContainer>
+           <LogoutButton />
+           {/* Add other buttons here if needed */}
+       </TopLeftContainer>
+
+       {/* Top-Right Buttons */}
+       <TopRightContainer>
+           <AdminLink href="/admin">Scribe&apos;s Chambers</AdminLink>
+       </TopRightContainer>
+
 
       <ContentWrapper>
         <Title>The Macbeth Oracle</Title>
@@ -122,6 +147,7 @@ export default function ChatPage() {
 
         <Flourish>❦ ❦ ❦</Flourish>
 
+        {/* The main Chat interface component */}
         <Chat />
 
         <Flourish>❦ ❦ ❦</Flourish>
