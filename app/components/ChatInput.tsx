@@ -2,25 +2,27 @@
 'use client';
 
 import { FormEvent } from 'react';
-import { 
-  InputForm, 
-  InputContainer, 
-  TextInput, 
-  SendButton 
+import {
+  InputForm,
+  InputContainer,
+  TextInput,
+  SendButton // Keep importing SendButton
 } from '@/app/styles/ChatStyles';
 import styled from 'styled-components';
 
-// Add decoration to the send button
+// Style ONLY the button itself, relying on SendButton for the icon
 const StylizedSendButton = styled(SendButton)`
   display: flex;
   align-items: center;
   justify-content: center;
   
   &:before {
-    content: '✒️';
-    margin-right: 0.5rem;
+    content: '';
+    margin-right: 0;
   }
 `;
+
+// --- NO IconSpan component needed ---
 
 type ChatInputProps = {
   value: string;
@@ -29,11 +31,11 @@ type ChatInputProps = {
   isLoading: boolean;
 };
 
-export default function ChatInput({ 
-  value, 
-  onChange, 
-  onSubmit, 
-  isLoading 
+export default function ChatInput({
+  value,
+  onChange,
+  onSubmit,
+  isLoading
 }: ChatInputProps) {
   return (
     <InputForm onSubmit={onSubmit}>
@@ -45,8 +47,9 @@ export default function ChatInput({
           placeholder="Pose thy query about Macbeth..."
           disabled={isLoading}
         />
-        <StylizedSendButton 
-          type="submit" 
+        {/* The button ONLY contains the text. The icon comes from SendButton's ::before style */}
+        <StylizedSendButton
+          type="submit"
           disabled={isLoading || !value.trim()}
         >
           Dispatch

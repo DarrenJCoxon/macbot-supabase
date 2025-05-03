@@ -15,25 +15,8 @@ export const ChatContainer = styled.div`
   box-shadow: ${props => props.theme?.shadows?.medium || '0 4px 8px rgba(0, 0, 0, 0.2)'};
   font-family: ${props => props.theme?.fonts?.body || 'inherit'};
   position: relative;
-  
-  /* Decorative corner flourishes */
-  &:before, &:after {
-    content: '❦';
-    position: absolute;
-    color: ${props => props.theme?.colors?.gold || '#c4a747'};
-    font-size: 1.5rem;
-    opacity: 0.7;
-  }
-  
-  &:before {
-    top: 10px;
-    left: 10px;
-  }
-  
-  &:after {
-    bottom: 10px;
-    right: 10px;
-  }
+
+  /* Decorative corner flourishes removed */
 `;
 
 // Container for the scrollable list of messages
@@ -46,19 +29,19 @@ export const MessagesList = styled.div`
   gap: 16px;
   background: ${props => props.theme?.colors?.background || 'var(--background)'};
   background-image: linear-gradient(
-    rgba(248, 244, 233, 0.7), 
+    rgba(248, 244, 233, 0.7),
     rgba(248, 244, 233, 0.7)
   );
-  
+
   /* Custom scrollbar for theme */
   &::-webkit-scrollbar {
     width: 8px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: ${props => props.theme?.colors?.backgroundDark || 'var(--gray-100)'};
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background-color: ${props => props.theme?.colors?.border || 'var(--gray-300)'};
     border-radius: 20px;
@@ -69,28 +52,28 @@ export const MessagesList = styled.div`
 export const MessageBubble = styled.div<{ $isUser: boolean }>`
   max-width: 80%;
   padding: 12px 16px;
-  border-radius: ${props => props.$isUser 
+  border-radius: ${props => props.$isUser
     ? `${props.theme?.borderRadius?.large || '8px'} ${props.theme?.borderRadius?.large || '8px'} 0 ${props.theme?.borderRadius?.large || '8px'}`
     : `${props.theme?.borderRadius?.large || '8px'} ${props.theme?.borderRadius?.large || '8px'} ${props.theme?.borderRadius?.large || '8px'} 0`
   };
   align-self: ${props => (props.$isUser ? 'flex-end' : 'flex-start')};
-  
+
   /* Different styling for user vs assistant */
-  background-color: ${props => props.$isUser 
-    ? (props.theme?.colors?.primary || 'var(--primary)') 
+  background-color: ${props => props.$isUser
+    ? (props.theme?.colors?.primary || 'var(--primary)')
     : (props.theme?.colors?.backgroundDark || 'var(--gray-200)')
   };
-  color: ${props => props.$isUser 
+  color: ${props => props.$isUser
     ? 'white'
     : (props.theme?.colors?.text || 'var(--gray-800)')
   };
-  
+
   /* Parchment effect for the assistant's messages */
   ${props => !props.$isUser && `
     border: 1px solid ${props.theme?.colors?.border || '#d1c4a1'};
     box-shadow: ${props.theme?.shadows?.small || '0 2px 4px rgba(0, 0, 0, 0.1)'};
     position: relative;
-    
+
     &:after {
       content: '';
       position: absolute;
@@ -102,12 +85,12 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
       border-radius: 0 0 ${props.theme?.borderRadius?.large || '8px'} 0;
     }
   `}
-  
+
   /* User message styling */
   ${props => props.$isUser && `
     box-shadow: ${props.theme?.shadows?.small || '0 2px 4px rgba(0, 0, 0, 0.1)'};
   `}
-  
+
   /* Markdown elements styling */
   h1, h2, h3, h4, h5, h6 {
     margin-top: 0.8em;
@@ -116,24 +99,24 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
     line-height: 1.3;
     color: inherit;
     font-family: ${props => props.theme?.fonts?.heading || 'inherit'};
-    
+
     &:first-child {
       margin-top: 0;
     }
   }
-  
+
   h1 { font-size: 1.4em; }
   h2 { font-size: 1.3em; }
   h3 { font-size: 1.2em; }
 
   p {
     margin-bottom: 0.8em;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
-  
+
   /* Lists */
   ul, ol {
     margin-bottom: 0.8em;
@@ -146,8 +129,8 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
 
   /* Inline Code */
   code {
-    background-color: ${props => props.$isUser 
-      ? 'rgba(255, 255, 255, 0.2)' 
+    background-color: ${props => props.$isUser
+      ? 'rgba(255, 255, 255, 0.2)'
       : 'rgba(0, 0, 0, 0.08)'
     };
     padding: 0.2em 0.4em;
@@ -155,7 +138,7 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
     font-size: 0.9em;
     font-family: ${props => props.theme?.fonts?.mono || 'var(--font-geist-mono, Consolas, Monaco, monospace)'};
   }
-  
+
   /* Code Blocks */
   pre {
     background-color: ${props => props.theme?.colors?.backgroundDark || 'var(--gray-100)'};
@@ -178,15 +161,15 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
 
   /* Links */
   a {
-    color: ${props => props.$isUser 
-      ? '#bbe1fa' 
+    color: ${props => props.$isUser
+      ? '#bbe1fa'
       : (props.theme?.colors?.secondary || 'var(--primary)')
     };
     text-decoration: underline;
-    
+
     &:hover {
-      color: ${props => props.$isUser 
-        ? '#d6edff' 
+      color: ${props => props.$isUser
+        ? '#d6edff'
         : (props.theme?.colors?.secondaryLight || 'var(--primary-hover)')
       };
     }
@@ -194,8 +177,8 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
 
   /* Blockquotes - styled as theatrical asides */
   blockquote {
-    border-left: 3px solid ${props => props.$isUser 
-      ? 'rgba(255, 255, 255, 0.5)' 
+    border-left: 3px solid ${props => props.$isUser
+      ? 'rgba(255, 255, 255, 0.5)'
       : (props.theme?.colors?.secondary || 'var(--gray-300)')
     };
     padding-left: 1em;
@@ -204,13 +187,13 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
     color: inherit;
     opacity: 0.9;
     font-style: italic;
-    
+
     &:before {
       content: '"';
       font-size: 1.2em;
       margin-right: 0.2em;
     }
-    
+
     &:after {
       content: '"';
       font-size: 1.2em;
@@ -226,13 +209,13 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
     font-size: 0.9em;
     border: 1px solid ${props => props.theme?.colors?.border || 'var(--gray-300)'};
   }
-  
+
   th, td {
     border: 1px solid ${props => props.theme?.colors?.border || 'var(--gray-300)'};
     padding: 0.5em 0.7em;
     text-align: left;
   }
-  
+
   th {
     background-color: ${props => props.theme?.colors?.backgroundDark || 'var(--gray-100)'};
     font-weight: 600;
@@ -241,26 +224,26 @@ export const MessageBubble = styled.div<{ $isUser: boolean }>`
   /* Horizontal Rules - styled as decorative dividers */
   hr {
     border: none;
-    border-top: 1px solid ${props => props.$isUser 
-      ? 'rgba(255, 255, 255, 0.3)' 
+    border-top: 1px solid ${props => props.$isUser
+      ? 'rgba(255, 255, 255, 0.3)'
       : (props.theme?.colors?.border || 'var(--gray-300)')
     };
     margin: 1em 0;
     position: relative;
-    
+
     &:after {
       content: '❦';
       position: absolute;
       top: -0.7em;
       left: 50%;
       transform: translateX(-50%);
-      background: ${props => props.$isUser 
+      background: ${props => props.$isUser
         ? props.theme?.colors?.primary || 'var(--primary)'
         : props.theme?.colors?.backgroundDark || 'var(--gray-200)'
       };
       padding: 0 0.5em;
-      color: ${props => props.$isUser 
-        ? 'rgba(255, 255, 255, 0.7)' 
+      color: ${props => props.$isUser
+        ? 'rgba(255, 255, 255, 0.7)'
         : (props.theme?.colors?.gold || 'var(--gray-800)')
       };
       font-size: 0.8em;
@@ -303,7 +286,7 @@ export const TextInput = styled.input`
     cursor: not-allowed;
     opacity: 0.7;
   }
-  
+
   &::placeholder {
     color: ${props => props.theme?.colors?.textLight || 'var(--gray-800)'};
     font-style: italic;
@@ -330,12 +313,8 @@ export const SendButton = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
-  /* Add quill icon */
-  &:before {
-    content: '✒️';
-    margin-right: 0.5rem;
-  }
+
+  /* Icon removed */
 `;
 
 // Loading indicator styling with a quill animation
@@ -348,7 +327,7 @@ export const LoadingIndicator = styled.div`
   font-style: italic;
   font-size: 0.9em;
   font-family: ${props => props.theme?.fonts?.heading || 'inherit'};
-  
+
   &:before {
     content: "The Oracle ponders";
     margin-right: 0.5rem;
@@ -401,7 +380,7 @@ export const PageTitle = styled.h1`
   margin-bottom: 16px;
   color: ${props => props.theme?.colors?.primary || 'var(--foreground)'};
   font-family: ${props => props.theme?.fonts?.heading || 'inherit'};
-  
+
   &:before, &:after {
     content: '✧';
     font-size: 2rem;
@@ -418,7 +397,7 @@ export const PageSubtitle = styled.h2`
   color: ${props => props.theme?.colors?.textLight || 'var(--gray-800)'};
   font-family: ${props => props.theme?.fonts?.heading || 'inherit'};
   font-style: italic;
-  
+
   &:before, &:after {
     content: '~';
     margin: 0 0.5rem;
