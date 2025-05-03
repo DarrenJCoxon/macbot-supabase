@@ -1,7 +1,7 @@
 // app/components/Chat.tsx
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react'; // Added useEffect
+import { useState, FormEvent, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
@@ -10,132 +10,133 @@ import {
   ChatContainer,
   MessagesList,
   LoadingIndicator
-} from '@/app/styles/ChatStyles';
-import { Message } from '@/app/types';
+} from '@/app/styles/ChatStyles'; // Adjust path if needed
+import { Message } from '@/app/types'; // Adjust path if needed
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'system-1',
       role: 'system',
-      // Update to more theatrical language
       content: "Thou art speaking with the MacBeth Oracle, a learned scholar of the Scottish Play. This Oracle shall illuminate themes, characters, tragic arcs, and the bard's devices within Shakespeare's darkest tragedy. The Oracle draws wisdom from scrolls thou uploadeth using the 'Consult Ancient Texts' button. Responses shall be scholarly yet engaging, with references to acts and scenes when fitting. If no knowledge exists within the Oracle's scrolls, it shall declare such ignorance rather than weave falsehoods."
     }
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // For chat response loading
-  // State to track if *any* files have been successfully uploaded in this session
+  const [isLoading, setIsLoading] = useState(false);
   const [hasUploadedFiles, setHasUploadedFiles] = useState(false);
-  // State for displaying upload status feedback
   const [uploadStatus, setUploadStatus] = useState<{ error: boolean; message: string | null }>({ error: false, message: null });
 
-  // Effect to automatically clear status messages after a delay
   useEffect(() => {
     if (uploadStatus.message) {
         const timer = setTimeout(() => {
             setUploadStatus({ error: false, message: null });
-        }, 5000); // Clear message after 5 seconds
+        }, 5000);
         return () => clearTimeout(timer);
     }
   }, [uploadStatus]);
-
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
   };
 
-  // Handles files selected via the FileUpload component
+  // --- MODIFIED FUNCTION ---
   const handleFileUpload = async (files: File[]) => {
     console.log('[Chat.tsx] handleFileUpload received files:', files);
-    setUploadStatus({ error: false, message: 'Uploading...' }); // Show uploading status
+    setUploadStatus({ error: false, message: 'Uploading...' });
 
     if (!files || files.length === 0) {
         console.error('[Chat.tsx] handleFileUpload received no files!');
         setUploadStatus({ error: true, message: 'No files were selected.' });
-        return;
+        // Important: Rethrow or return explicitly so FileUpload knows about the error
+        throw new Error('No files were selected.');
     }
 
-    // Prepare form data for the /api/upload route
+    // --- Assume only ONE file ---
+    // Adapt this if your backend handles multiple files with the key 'file[]' or similar
+    if (files.length > 1) {
+        console.warn('[Chat.tsx] Multiple files selected, processing only the first one.');
+        setUploadStatus({ error: false, message: 'Processing first file...' });
+    }
+    const fileToUpload = files[0];
+
+    if (!(fileToUpload instanceof File)) {
+         console.error('[Chat.tsx] The selected item is not a valid File object:', fileToUpload);
+         const errorMsg = 'Invalid item selected.';
+         setUploadStatus({ error: true, message: errorMsg });
+         throw new Error(errorMsg); // Propagate error
+    }
+    // --- End File Selection ---
+
     const formData = new FormData();
-    const serverExpectedFileKey = 'files'; // Key expected by /api/upload
-    let fileAppendError = false;
+    // --- Use 'file' (singular) key to match backend formData.get('file') ---
+    const serverExpectedFileKey = 'file';
+    formData.append(serverExpectedFileKey, fileToUpload, fileToUpload.name);
+    console.log(`[Chat.tsx] Appended file: ${fileToUpload.name} to formData with key '${serverExpectedFileKey}'`);
 
-    files.forEach((file, index) => {
-      if (file instanceof File) {
-          formData.append(serverExpectedFileKey, file, file.name);
-          console.log(`[Chat.tsx] Appended file ${index}: ${file.name} to formData with key '${serverExpectedFileKey}'`);
-      } else {
-          console.error(`[Chat.tsx] Item at index ${index} is not a valid File object:`, file);
-          setUploadStatus({ error: true, message: `Invalid item detected during upload.` });
-          fileAppendError = true; // Set flag
-      }
-    });
+    // --- Append metadata field - REQUIRED by the current backend route ---
+    // Create basic metadata (title from filename)
+    const uploadMetadata = {
+        title: fileToUpload.name.replace(/\.[^/.]+$/, ""), // Remove extension for title
+        source: '', // Optional: Add source if you collect it
+        type: 'user_upload', // Set a default type
+    };
+    // The backend expects the metadata as a JSON string under the key 'metadata'
+    formData.append('metadata', JSON.stringify(uploadMetadata));
+    console.log('[Chat.tsx] Appended metadata:', uploadMetadata);
+    // --- End Append metadata ---
 
-    // Stop if there was an issue appending files
-    if (fileAppendError) return;
-
-    // Verify formData content before sending (for debugging)
-    const formDataKeys = Array.from(formData.keys());
-    console.log('[Chat.tsx] FormData keys before sending:', formDataKeys);
-    const filesInFormData = formData.getAll(serverExpectedFileKey);
-    console.log(`[Chat.tsx] Final check: formData.getAll('${serverExpectedFileKey}') found ${filesInFormData.length} entries.`);
-    if (filesInFormData.length !== files.length) {
-        console.error(`[Chat.tsx] Mismatch! Files appended (${files.length}) vs files in FormData (${filesInFormData.length}). Upload aborted.`);
-        setUploadStatus({ error: true, message: `Internal error preparing upload data. Please try again.` });
-        return;
-    }
-
-    console.log('[Chat.tsx] Sending fetch request to /api/upload...');
+    console.log('[Chat.tsx] Sending fetch request to /api/upload...'); // Ensure this path is correct
     try {
-        // Send files to the dedicated upload endpoint
-        const response = await fetch('/api/upload', {
+        // Ensure fetch targets the correct API route
+        // Use '/api/admin/upload-document' if you didn't rename it, '/api/upload' otherwise
+        const uploadRoute = '/api/upload'; // <--- CONFIRM OR CHANGE THIS PATH
+        const response = await fetch(uploadRoute, {
             method: 'POST',
             body: formData,
+            // No Content-Type header needed for FormData - browser sets it
         });
-        console.log(`[Chat.tsx] Received response from /api/upload with status: ${response.status}`);
 
-        // Handle response from the upload API
+        console.log(`[Chat.tsx] Received response from ${uploadRoute} with status: ${response.status}`);
+
+        // Always try to read response body, even on error
+        const responseData = await response.json().catch(() => ({ // Default empty object on JSON parse error
+            error: `Server returned status ${response.status} with non-JSON response.`,
+            details: 'Could not parse response body.'
+        }));
+
         if (!response.ok) {
-            let errorDetails = `Server returned status ${response.status}`;
-            try {
-                 const errorData = await response.json();
-                 errorDetails = errorData.error || errorData.details || errorData.message || JSON.stringify(errorData);
-            } catch {
-                 try { errorDetails = await response.text(); } catch {} // Fallback to text
-            }
+            // Use error details from parsed JSON body if available
+            const errorDetails = responseData.error || responseData.details || `Server returned status ${response.status}`;
             console.error(`[Chat.tsx] File upload fetch failed! Status: ${response.status}, Details: ${errorDetails}`);
             setUploadStatus({ error: true, message: `Upload failed: ${errorDetails}` });
-            // Propagate error to FileUpload component's catch block if needed
+            // Re-throw error for FileUpload component
             throw new Error(`File upload failed: ${errorDetails}`);
         }
 
         // Success Handling
-        setHasUploadedFiles(true); // Set the flag indicating files are now available for RAG
-        const responseData = await response.json();
+        setHasUploadedFiles(true);
         console.log('[Chat.tsx] File upload successful:', responseData);
         setUploadStatus({ error: false, message: responseData.message || 'Upload successful!' });
 
-        // Get names of processed files from response for the confirmation message
-        const processedFileNames = responseData.processedFiles?.map((f: { name: string }) => f.name) || [];
-        const confirmationMessage = processedFileNames.length > 0
-            ? `Processed: ${processedFileNames.join(', ')}. You can now ask questions about the content!`
-            : "File processed. Ask questions about the content!"; // Fallback message
-
-        // Add assistant message confirming the upload
+        // Add confirmation message to chat
+        const confirmationMessage = `Processed: ${responseData.fileName || fileToUpload.name}. Ask questions about its content!`;
         setMessages(prev => [
           ...prev,
           { id: nanoid(), role: 'assistant', content: confirmationMessage }
         ]);
 
     } catch (error) {
-        // Catch network errors or errors thrown from !response.ok
+        // Catch network errors or errors explicitly thrown above
         console.error('[Chat.tsx] Error during file upload fetch/processing:', error);
-        if (!uploadStatus.error) { // Avoid overwriting specific error from !response.ok
+        // Update status only if not already set by !response.ok block
+        if (!uploadStatus.error || uploadStatus.message?.includes('Uploading')) {
              setUploadStatus({ error: true, message: error instanceof Error ? error.message : 'Upload network error.' });
         }
-        // Error is caught here, no need to throw again unless FileUpload depends on it
+        // IMPORTANT: Re-throw the error so FileUpload component's catch block can run
+        throw error;
     }
   };
+  // --- END MODIFIED FUNCTION ---
 
 
   // Handles sending chat messages to the /api/chat route
@@ -144,62 +145,44 @@ export default function Chat() {
     const trimmedInput = input.trim();
     if (!trimmedInput || isLoading) return;
 
-    // Create the user message object
     const userMessage: Message = {
-      id: nanoid(),
-      role: 'user',
-      content: trimmedInput,
-      createdAt: new Date()
+      id: nanoid(), role: 'user', content: trimmedInput, createdAt: new Date()
     };
 
-    // Add user message to state immediately
     setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true); // Set loading state for AI response
-    setInput(''); // Clear input field
+    setIsLoading(true);
+    setInput('');
 
     try {
-      // Prepare request body for chat API
-      // No filterFileName needed anymore
       const requestBody = {
-          messages: [...messages, userMessage], // Send message history + new message
-          useUploadedFiles: hasUploadedFiles, // Send flag to trigger RAG on server
+          messages: [...messages, userMessage],
+          useUploadedFiles: hasUploadedFiles,
       };
       console.log('[Chat.tsx] Sending chat request with body:', requestBody);
 
-      // Call the chat API endpoint
-      const response = await fetch('/api/chat', {
+      // --- Ensure this fetch targets your CHAT API route ---
+      const chatRoute = '/api/chat'; // <--- CONFIRM OR CHANGE THIS PATH
+      const response = await fetch(chatRoute, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
       });
 
-      // Handle chat API response
       if (!response.ok) {
         let errorDetails = `Chat API error! Status: ${response.status}`;
-        try {
-            const errorData = await response.json();
-            errorDetails = errorData.error || errorData.details || JSON.stringify(errorData);
-        } catch {
-            try { errorDetails = await response.text() || errorDetails; } catch {}
-        }
-         console.error(`[Chat.tsx] Chat API fetch error: ${errorDetails}`);
-        throw new Error(errorDetails); // Throw to be caught below
+        try { const errorData = await response.json(); errorDetails = errorData.error || errorData.details || JSON.stringify(errorData); }
+        catch { try { errorDetails = await response.text() || errorDetails; } catch {} }
+        console.error(`[Chat.tsx] Chat API fetch error: ${errorDetails}`);
+        throw new Error(errorDetails);
       }
 
-      // Process the streamed response
       if (response.body) {
         const responseId = nanoid();
-        // Add empty assistant message placeholder
-        setMessages(prev => [
-          ...prev,
-          { id: responseId, role: 'assistant', content: '' }
-        ]);
-
+        setMessages(prev => [...prev, { id: responseId, role: 'assistant', content: '' }]);
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let responseText = '';
 
-        // Stream content into the placeholder message
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
@@ -209,31 +192,22 @@ export default function Chat() {
           setMessages(prev => {
             const newMessages = [...prev];
             const lastMessageIndex = newMessages.findLastIndex(m => m.id === responseId);
-            if (lastMessageIndex !== -1) {
-                newMessages[lastMessageIndex] = { ...newMessages[lastMessageIndex], content: responseText };
-            } else { /* Should not happen */ }
+            if (lastMessageIndex !== -1) { newMessages[lastMessageIndex] = { ...newMessages[lastMessageIndex], content: responseText }; }
             return newMessages;
           });
         }
       } else {
-          console.warn("[Chat.tsx] Chat API response was ok but had no body.");
-          // Maybe add a default "empty response" message?
+          console.warn("[Chat.tsx] Chat API response ok but no body.");
           setMessages(prev => [...prev, { id: nanoid(), role: 'assistant', content: "[Received empty response]" }]);
       }
-      setIsLoading(false); // Clear loading state after streaming finishes
+      setIsLoading(false);
 
     } catch (error) {
-      // Handle errors during chat API call or streaming
-      console.error('[Chat.tsx] Error sending chat message or processing response:', error);
-      setIsLoading(false); // Clear loading state on error
-      // Add error message to the chat
+      console.error('[Chat.tsx] Error sending chat message:', error);
+      setIsLoading(false);
       setMessages(prev => [
         ...prev,
-        {
-          id: nanoid(),
-          role: 'assistant',
-          content: `Sorry, could not get a response. Error: ${error instanceof Error ? error.message : 'Unknown issue'}`,
-        }
+        { id: nanoid(), role: 'assistant', content: `Sorry, error processing chat. ${error instanceof Error ? error.message : ''}` }
       ]);
     }
   }; // --- End handleSubmit ---
@@ -242,7 +216,7 @@ export default function Chat() {
   // --- Component Render ---
   return (
     <ChatContainer>
-      {/* FileUpload component triggers handleFileUpload */}
+      {/* FileUpload triggers handleFileUpload via onFileUpload prop */}
       <FileUpload onFileUpload={handleFileUpload} />
 
       {/* Display upload status message */}
@@ -259,7 +233,6 @@ export default function Chat() {
             <ChatMessage key={message.id} message={message} />
           )
         )}
-        {/* Show loading indicator only when waiting for chat response */}
         {isLoading && <LoadingIndicator>Macbot is thinking</LoadingIndicator>}
       </MessagesList>
 
@@ -268,7 +241,7 @@ export default function Chat() {
         value={input}
         onChange={handleInputChange}
         onSubmit={handleSubmit}
-        isLoading={isLoading} // Disable input while AI is responding
+        isLoading={isLoading}
       />
     </ChatContainer>
   );
