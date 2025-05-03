@@ -44,8 +44,16 @@ export async function streamCompletion(messages: Array<{role: string, content: s
   });
 }
 
-export default {
+// app/lib/openrouter-client.ts
+
+// ... keep all existing code above ...
+
+// Assign the object to a named constant
+const openRouterClient = {
   streamCompletion,
   headers: openRouterHeaders,
   modelName,
 };
+
+// Export the named constant as the default
+export default openRouterClient;

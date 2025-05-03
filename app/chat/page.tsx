@@ -114,7 +114,7 @@ export default function ChatPage() {
   return (
     <PageContainer>
       {/* Use the renamed styled component */}
-      <AdminButtonLink href="/admin">Scribe's Chambers</AdminButtonLink>
+      <AdminButtonLink href="/admin">Scribe&apos;s Chambers</AdminButtonLink>
 
       <ContentWrapper>
         <Title>The Macbeth Oracle</Title>
