@@ -188,59 +188,80 @@ export default function DocumentUploader() {
     }));
   };
 
-  // Handler for form submission
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    console.log("[DocumentUploader] handleSubmit triggered.");
-
-    if (!file) {
-      console.log("[DocumentUploader] Validation failed: No file selected.");
-      setStatus({ message: 'Please select a file to upload', isError: true });
-      return;
-    }
-     if (!metadata.title.trim()) {
-        console.log("[DocumentUploader] Validation failed: Document Title is required.");
-        setStatus({ message: 'Document Title is required', isError: true });
+    // Handler for form submission
+    const handleSubmit = async (e: FormEvent) => {
+      e.preventDefault();
+      console.log("[DocumentUploader] handleSubmit triggered.");
+  
+      // --- Keep validation the same ---
+      if (!file) {
+        console.log("[DocumentUploader] Validation failed: No file selected.");
+        setStatus({ message: 'Please select a file to upload', isError: true });
         return;
-    }
-
-    setIsUploading(true);
-    setStatus(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file, file.name);
-      formData.append('metadata', JSON.stringify(metadata));
-      console.log("[DocumentUploader] FormData prepared. Keys:", Array.from(formData.keys()));
-
-      console.log("[DocumentUploader] Sending request to /api/admin/upload-document");
-      const response = await fetch('/api/admin/upload-document', {
-        method: 'POST',
-        body: formData,
-      });
-      console.log(`[DocumentUploader] Received response with status: ${response.status}`);
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log("[DocumentUploader] Upload successful:", data);
-        setStatus({ message: data.message || 'Document uploaded successfully!', isError: false });
-        setFile(null);
-        setMetadata({ title: '', source: '', type: 'notes' });
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      } else {
-        console.error("[DocumentUploader] Upload failed:", data);
-        setStatus({ message: data.error || data.details || 'Failed to upload document', isError: true });
       }
-    } catch (error) {
-      console.error('[DocumentUploader] Error submitting document:', error);
-      setStatus({ message: 'An unexpected network or client-side error occurred', isError: true });
-    } finally {
-      setIsUploading(false);
-    }
-  };
+       if (!metadata.title.trim()) {
+          console.log("[DocumentUploader] Validation failed: Document Title is required.");
+          setStatus({ message: 'Document Title is required', isError: true });
+          return;
+      }
+  
+      setIsUploading(true);
+      setStatus(null);
+  
+      try {
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+        formData.append('metadata', JSON.stringify(metadata));
+        console.log("[DocumentUploader] FormData prepared:", { file: file.name, metadata }); // Keep this log
+  
+        // --- *** THE FIX: Point to the correct unified route *** ---
+        const uploadRoute = '/api/upload';
+        console.log(`[DocumentUploader] Sending request to ${uploadRoute}`); // Log the correct path
+        const response = await fetch(uploadRoute, {                           // Fetch the correct path
+          method: 'POST',
+          body: formData,
+          // No Content-Type needed for FormData
+        });
+        // --- *** END FIX *** ---
+  
+        console.log(`[DocumentUploader] Received response from ${uploadRoute} with status: ${response.status}`); // Log using variable
+  
+        // --- Using the more robust response handling from before ---
+        if (!response.ok) {
+              let errorBody = `Server responded with status ${response.status}`;
+              try {
+                  const text = await response.text();
+                  errorBody = text || errorBody;
+                  if (text && text.trim().startsWith('{')) {
+                     const jsonData = JSON.parse(text);
+                     errorBody = jsonData.error || jsonData.details || text;
+                  }
+              } catch (readError) {
+                  console.warn("Could not read error response body:", readError);
+              }
+              console.error("[DocumentUploader] Upload fetch failed:", errorBody);
+              throw new Error(`Upload failed: ${errorBody.substring(0, 200)}...`);
+         }
+  
+         // If response.ok, THEN parse as JSON
+         const data = await response.json();
+         // --- End response handling ---
+  
+          console.log("[DocumentUploader] Upload successful:", data);
+          setStatus({ message: data.message || 'Document uploaded successfully!', isError: false });
+          setFile(null);
+          setMetadata({ title: '', source: '', type: 'notes' });
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+  
+      } catch (error) {
+        console.error('[DocumentUploader] Error submitting document:', error);
+        setStatus({ message: error instanceof Error ? error.message : 'An unexpected network or client-side error occurred', isError: true });
+      } finally {
+        setIsUploading(false);
+      }
+    };
 
   // --- Component Render ---
   return (
